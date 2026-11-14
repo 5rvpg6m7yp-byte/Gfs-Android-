@@ -1,3 +1,4 @@
+
 name: Build APK
 on:
   push:
@@ -16,8 +17,9 @@ jobs:
           gradle-version: 8.9
       - name: Create Android project
         run: |
-          mkdir -p android/app/src/main/assets android/app/src/main/java/com/gulffireshield/app
+          mkdir -p android/app/src/main/assets android/app/src/main/java/com/finoraglobalservices/app android/app/src/main/res/drawable
           cp index.html android/app/src/main/assets/index.html
+          cp finora-icon.png android/app/src/main/res/drawable/finora_icon.png
           cat > android/settings.gradle <<'EOT'
           pluginManagement {
               repositories { google(); mavenCentral(); gradlePluginPortal() }
@@ -25,7 +27,7 @@ jobs:
           dependencyResolutionManagement {
               repositories { google(); mavenCentral() }
           }
-          rootProject.name = "GulfFireShield"
+          rootProject.name = "FinoraGlobalServicesFZE"
           include ':app'
           EOT
           cat > android/build.gradle <<'EOT'
@@ -34,10 +36,10 @@ jobs:
           cat > android/app/build.gradle <<'EOT'
           plugins { id 'com.android.application' }
           android {
-              namespace 'com.gulffireshield.app'
+              namespace 'com.finoraglobalservices.app'
               compileSdk 34
               defaultConfig {
-                  applicationId 'com.gulffireshield.app'
+                  applicationId 'com.finoraglobalservices.app'
                   minSdk 24
                   targetSdk 34
                   versionCode 1
@@ -48,7 +50,7 @@ jobs:
           cat > android/app/src/main/AndroidManifest.xml <<'EOT'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <application android:label="Gulf Fire Shield" android:theme="@android:style/Theme.Material.Light.NoActionBar">
+              <application android:label="FINORA GLOBAL SERVICES FZE" android:icon="@drawable/finora_icon" android:theme="@android:style/Theme.Material.Light.NoActionBar">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
@@ -58,8 +60,8 @@ jobs:
               </application>
           </manifest>
           EOT
-          cat > android/app/src/main/java/com/gulffireshield/app/MainActivity.java <<'EOT'
-          package com.gulffireshield.app;
+          cat > android/app/src/main/java/com/finoraglobalservices/app/MainActivity.java <<'EOT'
+          package com.finoraglobalservices.app;
           import android.app.Activity;
           import android.os.Bundle;
           import android.webkit.WebView;
@@ -83,5 +85,5 @@ jobs:
         run: gradle assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with:
-          name: GulfFireShield-APK
+          name: FINORA-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
