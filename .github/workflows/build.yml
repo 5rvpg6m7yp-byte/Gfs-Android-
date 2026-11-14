@@ -1,25 +1,54 @@
 
 name: Build APK
+
 on:
   push:
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '17'
+
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: 8.9
+          gradle-version: '8.9'
+
+      - name: Check FINORA files
+        run: |
+          test -f index.html || { echo 'Missing index.html'; exit 1; }
+          test -f app-icon.png || { echo 'Missing app-icon.png'; exit 1; }
+          test -f google-services.json || { echo 'Missing google-services.json'; exit 1; }
+          python3 - <<'PY'
+          import json
+          with open('google-services.json', encoding='utf-8') as file:
+              config = json.load(file)
+          packages = [
+              client.get('client_info', {}).get('android_client_info', {}).get('package_name')
+              for client in config.get('client', [])
+          ]
+          if 'com.finora.app' not in packages:
+              raise SystemExit('Firebase JSON does not contain Android package com.finora.app')
+          print('Firebase Android package verified: com.finora.app')
+          PY
+
       - name: Create Android project
         run: |
-          mkdir -p android/app/src/main/assets android/app/src/main/java/com/finoraglobalservices/app android/app/src/main/res/drawable
+          mkdir -p android/app/src/main/assets
+          mkdir -p android/app/src/main/java/com/finora/app
+          mkdir -p android/app/src/main/res/drawable
+
           cp index.html android/app/src/main/assets/index.html
-          cp finora-icon.png android/app/src/main/res/drawable/finora_icon.png
+          cp app-icon.png android/app/src/main/res/drawable/app_icon.png
+          cp google-services.json android/app/google-services.json
+
           cat > android/settings.gradle <<'EOT'
           pluginManagement {
               repositories { google(); mavenCentral(); gradlePluginPortal() }
@@ -27,63 +56,101 @@ jobs:
           dependencyResolutionManagement {
               repositories { google(); mavenCentral() }
           }
-          rootProject.name = "FinoraGlobalServicesFZE"
+          rootProject.name = 'FinoraGlobalServices'
           include ':app'
           EOT
+
           cat > android/build.gradle <<'EOT'
-          plugins { id 'com.android.application' version '8.5.2' apply false }
+          plugins {
+              id 'com.android.application' version '8.5.2' apply false
+              id 'com.google.gms.google-services' version '4.6.0' apply false
+          }
           EOT
+
           cat > android/app/build.gradle <<'EOT'
-          plugins { id 'com.android.application' }
+          plugins {
+              id 'com.android.application'
+              id 'com.google.gms.google-services'
+          }
+
           android {
-              namespace 'com.finoraglobalservices.app'
+              namespace 'com.finora.app'
               compileSdk 34
               defaultConfig {
-                  applicationId 'com.finoraglobalservices.app'
+                  applicationId 'com.finora.app'
                   minSdk 24
                   targetSdk 34
                   versionCode 1
                   versionName '1.0'
               }
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+
+          dependencies {
+              implementation platform('com.google.firebase:firebase-bom:35.2.0')
+              implementation 'com.google.firebase:firebase-auth'
           }
           EOT
+
           cat > android/app/src/main/AndroidManifest.xml <<'EOT'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <application android:label="FINORA GLOBAL SERVICES FZE" android:icon="@drawable/finora_icon" android:theme="@android:style/Theme.Material.Light.NoActionBar">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application
+                  android:label="FINORA GLOBAL SERVICES FZE"
+                  android:icon="@drawable/app_icon"
+                  android:theme="@android:style/Theme.Material.Light.NoActionBar">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/>
-                          <category android:name="android.intent.category.LAUNCHER"/>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
                   </activity>
               </application>
           </manifest>
           EOT
-          cat > android/app/src/main/java/com/finoraglobalservices/app/MainActivity.java <<'EOT'
-          package com.finoraglobalservices.app;
+
+          cat > android/app/src/main/java/com/finora/app/MainActivity.java <<'EOT'
+          package com.finora.app;
+
           import android.app.Activity;
           import android.os.Bundle;
           import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+
           public class MainActivity extends Activity {
-              WebView w;
-              @Override protected void onCreate(Bundle b) {
+              private WebView w;
+
+              @Override public void onCreate(Bundle b) {
                   super.onCreate(b);
                   w = new WebView(this);
                   w.getSettings().setJavaScriptEnabled(true);
                   w.getSettings().setDomStorageEnabled(true);
+                  w.setWebViewClient(new WebViewClient());
                   setContentView(w);
                   w.loadUrl("file:///android_asset/index.html");
               }
+
               @Override public void onBackPressed() {
-                  if (w.canGoBack()) w.goBack(); else super.onBackPressed();
+                  if (w != null && w.canGoBack()) w.goBack();
+                  else super.onBackPressed();
               }
           }
           EOT
-      - name: Build
+
+      - name: Build FINORA APK
         working-directory: android
         run: gradle assembleDebug --no-daemon
-      - uses: actions/upload-artifact@v4
+
+      - name: Show FINORA SHA-1 and SHA-256
+        working-directory: android
+        run: gradle signingReport --no-daemon
+
+      - name: Upload FINORA APK
+        uses: actions/upload-artifact@v4
         with:
           name: FINORA-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
