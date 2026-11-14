@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "526484853848",
+    "project_id": "finora-sign-in-and-login",
+    "storage_bucket": "finora-sign-in-and-login.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:526484853848:android:1911b2c5b52ba55b3ca62d",
+        "android_client_info": {
+          "package_name": "com.finora.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "526484853848-n0hcr5rt0riordvbvf6eaior1k2dpcb8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.finora.app",
+            "certificate_hash": "e36cf52b0e60151b194afd7214e960de512027f9"
+          }
+        },
+        {
+          "client_id": "526484853848-d1780853r7ooa9vng5uj9slo90m7j3st.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDS7FxzIXfhFzIsT9Q3X3WidvGeSB4txWI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "526484853848-d1780853r7ooa9vng5uj9slo90m7j3st.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
