@@ -49,6 +49,11 @@ jobs:
           cp app-icon.png android/app/src/main/res/drawable/app_icon.png
           cp google-services.json android/app/google-services.json
 
+          # Enable AndroidX for Firebase
+          cat > android/gradle.properties <<'EOT'
+          android.useAndroidX=true
+          EOT
+
           cat > android/settings.gradle <<'EOT'
           pluginManagement {
               repositories { google(); mavenCentral(); gradlePluginPortal() }
